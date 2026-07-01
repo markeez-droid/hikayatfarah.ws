@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html class="dark" dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>حكاية فرح ديزاين - 3D Kosha Studio</title>
+<script>window.tailwind = window.tailwind || {};</script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<style>
+  body { font-family:'Plus Jakarta Sans',sans-serif; overflow:hidden; background:#0e0e13; }
+  .glass-panel { background:rgba(31,31,37,0.7); border:1px solid rgba(77,70,55,0.3); backdrop-filter:blur(16px); }
+  input[type=range] { -webkit-appearance:none; background:transparent; }
+  input[type=range]::-webkit-slider-runnable-track { height:2px; background:#4d4637; border-radius:1px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; height:14px; width:14px; border-radius:50%; background:#e4e1e9; border:1px solid #e6c364; margin-top:-6px; cursor:pointer; box-shadow:0 0 10px rgba(230,195,100,.3); }
+  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24; }
+  .material-symbols-outlined.filled { font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24; }
+  .custom-scrollbar::-webkit-scrollbar { width:4px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background:#4d4637; border-radius:10px; }
+  .tone-swatch.active { outline:2px solid #e6c364; outline-offset:2px; }
+  .tab-pill.active { background:#e6c364; color:#3d2e00; border-color:#e6c364; }
+  .fav-btn.active .material-symbols-outlined { color:#e6c364; }
+  #webgl { display:block; width:100%; height:100%; }
+  .loading-pulse { animation:pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
+</style>
+<script id="tailwind-config">
+  if (window.tailwind) {
+  tailwind.config = { darkMode:"class", theme:{ extend:{ colors:{
+    "surface-container-lowest":"#0e0e13","background":"#131318","secondary-container":"#753348",
+    "on-primary-container":"#503d00","on-surface":"#e4e1e9","error":"#ffb4ab","surface-variant":"#35343a",
+    "on-background":"#e4e1e9","surface-tint":"#e6c364","outline-variant":"#4d4637","on-primary":"#3d2e00",
+    "surface-container":"#1f1f25","secondary":"#ffb1c4","surface-container-low":"#1b1b20",
+    "surface-container-high":"#2a292f","surface":"#131318","surface-dim":"#131318","primary-container":"#c9a84c",
+    "primary":"#e6c364","outline":"#99907e","on-surface-variant":"#d0c5b2","surface-container-highest":"#35343a",
+    "surface-bright":"#39383e","error-container":"#93000a","on-error-container":"#ffdad6" },
+    borderRadius:{DEFAULT:"0.25rem",lg:"0.5rem",xl:"0.75rem",full:"9999px"},
+    spacing:{"margin-edge":"24px","gutter":"20px","base-unit":"8px","touch-target-min":"48px"},
+    fontFamily:{"body-md":["Plus Jakarta Sans"],"headline-md":["Plus Jakarta Sans"],"label-caps":["Plus Jakarta Sans"],"display-lg-mobile":["Plus Jakarta Sans"]},
+    fontSize:{"headline-md":["20px",{lineHeight:"28px",fontWeight:"600"}],"label-caps":["12px",{lineHeight:"16px",letterSpacing:"0.1em",fontWeight:"700"}],"display-lg-mobile":["26px",{lineHeight:"32px",fontWeight:"700"}],"body-md":["15px",{lineHeight:"22px"}]}
+  }}};
+  }
+</script>
+</head>
+<body class="dark overflow-hidden h-screen w-screen flex flex-col">
+
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-margin-edge h-touch-target-min bg-surface/90 backdrop-blur-2xl border-b border-outline-variant/20">
+  <div class="flex items-center gap-base-unit">
+    <span class="text-display-lg-mobile font-bold tracking-tight text-primary">حكاية فرح ديزاين</span>
+    <div class="hidden md:flex gap-6 mr-6">
+      <button class="font-label-caps text-label-caps text-primary border-b border-primary pb-0.5 tracking-widest">PLANNER</button>
+      <button class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors tracking-widest" onclick="openCatalog()">CATALOG</button>
+      <button class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors tracking-widest">ARCHITECT AI</button>
+    </div>
+  </div>
+  <div class="flex items-center gap-4">
+    <button onclick="openFavorites()" class="relative w-9 h-9 rounded-full hover:bg-surface-variant/30 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" aria-label="My Selections">
+      <span class="material-symbols-outlined text-[20px]">favorite</span>
+      <span id="favBadge" class="hidden absolute -top-0.5 -left-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-primary text-on-primary text-[9px] font-bold flex items-center justify-center leading-none">0</span>
+    </button>
+    <div class="flex p-0.5 bg-surface-container rounded-full border border-outline-variant/20">
+      <button class="px-4 py-1 rounded-full font-label-caps text-[10px] transition-all text-on-surface-variant" id="clientToggle" onclick="toggleMode('client')">CLIENT</button>
+      <button class="px-4 py-1 rounded-full font-label-caps text-[10px] bg-primary text-on-primary shadow-sm transition-all" id="adminToggle" onclick="toggleMode('admin')">ARCHITECT</button>
+    </div>
+  </div>
+</header>
+
+<main class="flex-1 flex pt-touch-target-min pb-8 overflow-hidden relative">
+  <aside class="fixed right-0 top-0 h-full flex flex-col p-gutter z-40 bg-surface-container/60 backdrop-blur-xl border-l border-outline-variant/10 w-[280px] transition-all duration-500 translate-y-[48px]" id="sidebar">
+    <div class="mb-6 mt-2">
+      <h2 class="font-headline-md text-primary tracking-wide">لوحة التصميم</h2>
+      <p class="font-label-caps text-[10px] text-on-surface-variant/60 tracking-[0.2em] mt-1 uppercase">Design Console</p>
+    </div>
+    <div class="space-y-7 flex-1 overflow-y-auto pl-2 custom-scrollbar" id="technicalControls">
+      <div>
+        <label class="font-label-caps text-[10px] text-on-surface-variant/80 block mb-4 tracking-widest">الألوان · TONES</label>
+        <div class="flex gap-3" id="tones">
+          <div data-color="#e6c364" class="tone-swatch w-8 h-8 rounded-full bg-[#e6c364] cursor-pointer active" onclick="setTone(this,'#e6c364')"></div>
+          <div data-color="#f2f0ea" class="tone-swatch w-8 h-8 rounded-full bg-[#f2f0ea] cursor-pointer" onclick="setTone(this,'#f2f0ea')"></div>
+          <div data-color="#c4748a" class="tone-swatch w-8 h-8 rounded-full bg-[#c4748a] cursor-pointer" onclick="setTone(this,'#c4748a')"></div>
+          <div data-color="#8b7ec8" class="tone-swatch w-8 h-8 rounded-full bg-[#8b7ec8] cursor-pointer" onclick="setTone(this,'#8b7ec8')"></div>
+        </div>
+      </div>
+      <div>
+        <div class="flex justify-between mb-2"><label class="font-label-caps text-[10px] text-on-surface-variant tracking-widest">قطر المنصة · STAGE</label><span class="text-primary font-label-caps text-[10px]" id="stageVal">8.0m</span></div>
+        <input id="stageSlider" class="w-full" max="14" min="5" step="0.5" type="range" value="8" oninput="onStage(this.value)"/>
+      </div>
+      <div>
+        <div class="flex justify-between mb-2"><label class="font-label-caps text-[10px] text-on-surface-variant tracking-widest">الكراسي · CHAIRS</label><span class="text-primary font-label-caps text-[10px]" id="chairVal">24</span></div>
+        <input id="chairSlider" class="w-full" max="60" min="0" step="2" type="range" value="24" oninput="onChairs(this.value)"/>
+      </div>
+      <div>
+        <div class="flex justify-between mb-2"><label class="font-label-caps text-[10px] text-on-surface-variant tracking-widest">الورود · FLOWERS</label><span class="text-primary font-label-caps text-[10px]" id="flowerVal">Full</span></div>
+        <input id="flowerSlider" class="w-full" max="100" min="0" step="5" type="range" value="100" oninput="onFlowers(this.value)"/>
+      </div>
+      <div>
+        <div class="flex justify-between mb-2"><label class="font-label-caps text-[10px] text-on-surface-variant tracking-widest">الإضاءة · LIGHTING</label><span class="text-primary font-label-caps text-[10px]" id="lightVal">Warm</span></div>
+        <input id="lightSlider" class="w-full" max="100" min="10" step="5" type="range" value="65" oninput="onLight(this.value)"/>
+      </div>
+      <div>
+        <label class="font-label-caps text-[10px] text-on-surface-variant block mb-3 tracking-widest">الأرضية · FLOOR</label>
+        <select id="floorSelect" onchange="onFloor(this.value)" class="w-full bg-surface-variant/30 border border-outline-variant/20 rounded-lg p-2.5 text-on-surface text-sm appearance-none outline-none focus:border-primary/50 transition-colors">
+          <option value="marble">رخام لامع · Polished Marble</option>
+          <option value="gold">ذهبي · Gold Mirror</option>
+          <option value="dark">داكن · Dark Glass</option>
+        </select>
+      </div>
+      <div class="pt-2 space-y-3">
+        <button onclick="randomize()" class="w-full py-3 rounded-lg bg-primary text-on-primary font-bold text-[12px] tracking-widest hover:brightness-110 active:scale-[0.98] transition-all uppercase">تصميم جديد · New Design</button>
+        <button onclick="resetView()" class="w-full py-2.5 border border-outline-variant/20 rounded-lg text-on-surface-variant font-label-caps text-[9px] tracking-widest hover:bg-surface-variant/30 transition-all uppercase">إعادة الكاميرا · Reset Camera</button>
+      </div>
+    </div>
+  </aside>
+
+  <section class="flex-1 h-full relative overflow-hidden">
+    <div id="loading" class="absolute inset-0 z-20 flex flex-col items-center justify-center text-primary">
+      <span class="material-symbols-outlined text-4xl loading-pulse">deployed_code</span>
+      <p class="font-label-caps text-[10px] tracking-widest mt-3 loading-pulse">جاري بناء المشهد…</p>
+    </div>
+    <canvas id="webgl"></canvas>
+    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 glass-panel rounded-full px-4 py-1.5 pointer-events-none">
+      <span class="font-label-caps text-[9px] text-on-surface-variant tracking-widest">اسحب للدوران · drag to orbit · pinch to zoom</span>
+    </div>
+  </section>
+</main>
+
+<footer class="fixed bottom-0 w-full z-50 flex justify-between items-center px-margin-edge py-1 bg-surface/95 backdrop-blur-md border-t border-outline-variant/10 h-8">
+  <span class="font-label-caps text-[9px] text-primary tracking-widest">حكاية فرح ديزاين • Three.js 3D</span>
+  <div class="flex gap-6">
+    <span class="font-label-caps text-[9px] text-on-surface-variant/50" id="statChairs">Chairs: 24</span>
+    <span class="font-label-caps text-[9px] text-on-surface-variant/50" id="statStage">Stage: 8.0m</span>
+    <span class="font-label-caps text-[9px] text-primary">● Live</span>
+  </div>
+</footer>
+
+<!-- CATALOG PANEL -->
+<div id="catalogPanel" class="fixed inset-0 z-[70] bg-surface/97 backdrop-blur-2xl hidden flex-col">
+  <div class="flex items-center justify-between px-margin-edge h-touch-target-min border-b border-outline-variant/20 shrink-0">
+    <div>
+      <h2 class="font-headline-md text-primary tracking-wide">الكتالوج</h2>
+      <p class="font-label-caps text-[9px] text-on-surface-variant/60 tracking-[0.2em] uppercase">Product Catalog</p>
+    </div>
+    <button onclick="closeCatalog()" class="w-10 h-10 rounded-full hover:bg-surface-variant/30 flex items-center justify-center text-on-surface-variant" aria-label="Close">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+  <div class="px-margin-edge py-3 border-b border-outline-variant/10 shrink-0">
+    <div class="relative mb-3">
+      <input id="catalogSearch" type="text" placeholder="بحث… جرّب «ذهبي» أو CHA-005" oninput="filterCatalog()"
+        class="w-full bg-surface-variant/30 border border-outline-variant/20 rounded-full py-2 pr-4 pl-10 text-sm text-on-surface outline-none focus:border-primary/50 transition-colors"/>
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 text-[18px]">search</span>
+    </div>
+    <div id="catalogTabs" class="flex gap-2 overflow-x-auto custom-scrollbar pb-1"></div>
+  </div>
+  <div id="catalogBody" class="flex-1 overflow-y-auto custom-scrollbar px-margin-edge py-5">
+    <div id="catalogLoading" class="flex flex-col items-center justify-center text-primary py-20">
+      <span class="material-symbols-outlined text-4xl loading-pulse">deployed_code</span>
+      <p class="font-label-caps text-[10px] tracking-widest mt-3 loading-pulse">جاري تحميل الكتالوج…</p>
+    </div>
+    <div id="catalogGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 hidden"></div>
+    <p id="catalogEmpty" class="hidden text-center text-on-surface-variant/50 text-sm py-16">لا توجد نتائج · No pieces match your search</p>
+  </div>
+</div>
+
+<!-- FAVORITES PANEL -->
+<div id="favoritesPanel" class="fixed inset-0 z-[70] bg-surface/97 backdrop-blur-2xl hidden flex-col">
+  <div class="flex items-center justify-between px-margin-edge h-touch-target-min border-b border-outline-variant/20 shrink-0">
+    <div>
+      <h2 class="font-headline-md text-primary tracking-wide">اختياراتي</h2>
+      <p class="font-label-caps text-[9px] text-on-surface-variant/60 tracking-[0.2em] uppercase">My Selections</p>
+    </div>
+    <button onclick="closeFavorites()" class="w-10 h-10 rounded-full hover:bg-surface-variant/30 flex items-center justify-center text-on-surface-variant" aria-label="Close">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+  <div id="favBody" class="flex-1 overflow-y-auto custom-scrollbar px-margin-edge py-5">
+    <div id="favEmpty" class="text-center text-on-surface-variant/50 text-sm py-20">
+      <span class="material-symbols-outlined text-4xl block mb-3 opacity-40">favorite</span>
+      لم تحفظ أي قطعة بعد · Tap the heart on any piece to save it here
+    </div>
+    <div id="favList" class="space-y-3"></div>
+  </div>
+  <div id="favFooter" class="hidden px-margin-edge py-4 border-t border-outline-variant/10 shrink-0 space-y-2">
+    <button onclick="sendFavoritesWhatsApp()" class="w-full py-3.5 rounded-lg bg-primary text-on-primary font-bold text-[12px] tracking-widest hover:brightness-110 active:scale-[0.98] transition-all uppercase flex items-center justify-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">chat</span>
+      إرسال عبر واتساب · Send on WhatsApp
+    </button>
+    <button onclick="clearFavorites()" class="w-full py-2 text-on-surface-variant/50 font-label-caps text-[9px] tracking-widest hover:text-error transition-all uppercase">مسح الكل · Clear all</button>
+  </div>
+</div>
+
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+let scene, camera, renderer, controls;
+let stageGroup, chairGroup, flowerGroup, archGroup, floorMesh, keyLight, ambient;
+const state = { tone:'#e6c364', stage:8, chairs:24, flowers:100, light:65, floor:'marble' };
+
+init();
+animate();
+
+function init(){
+  const canvas = document.getElementById('webgl');
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color('#0e0e13');
+  scene.fog = new THREE.Fog('#0e0e13', 20, 50);
+
+  camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 200);
+  camera.position.set(0, 7, 16);
+
+  renderer = new THREE.WebGLRenderer({ canvas, antialias:true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+
+  controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.minDistance = 6;
+  controls.maxDistance = 32;
+  controls.maxPolarAngle = Math.PI/2 - 0.05;
+  controls.target.set(0, 2, 0);
+
+  ambient = new THREE.AmbientLight('#ffeccc', 0.5);
+  scene.add(ambient);
+  keyLight = new THREE.DirectionalLight('#fff2de', 1.4);
+  keyLight.position.set(6, 14, 8);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.set(2048,2048);
+  keyLight.shadow.camera.near = 1; keyLight.shadow.camera.far = 50;
+  keyLight.shadow.camera.left=-22; keyLight.shadow.camera.right=22;
+  keyLight.shadow.camera.top=22; keyLight.shadow.camera.bottom=-22;
+  scene.add(keyLight);
+  const rim = new THREE.PointLight('#e6c364', 0.6, 40); rim.position.set(-8,6,-6); scene.add(rim);
+
+  buildFloor();
+  buildStage();
+  buildArch();
+  buildFlowers();
+  buildSofa();
+  buildChairs();
+
+  window.addEventListener('resize', onResize);
+  document.getElementById('loading').style.display = 'none';
+}
+
+function clearGroup(g){ if(!g) return; while(g.children.length){ const c=g.children.pop(); c.traverse?.(o=>{o.geometry?.dispose?.(); o.material?.dispose?.();}); g.remove(c);} scene.remove(g); }
+
+function buildFloor(){
+  if(floorMesh){ scene.remove(floorMesh); floorMesh.geometry.dispose(); floorMesh.material.dispose(); }
+  const cfg = { marble:{c:'#b9b4ad',m:0.25,r:0.18}, gold:{c:'#caa64a',m:0.95,r:0.12}, dark:{c:'#15151b',m:0.55,r:0.22} }[state.floor];
+  floorMesh = new THREE.Mesh(new THREE.CircleGeometry(24, 64),
+    new THREE.MeshStandardMaterial({ color:cfg.c, metalness:cfg.m, roughness:cfg.r }));
+  floorMesh.rotation.x = -Math.PI/2;
+  floorMesh.receiveShadow = true;
+  scene.add(floorMesh);
+}
+
+function buildStage(){
+  clearGroup(stageGroup);
+  stageGroup = new THREE.Group();
+  const r = state.stage/2;
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.4, 48),
+    new THREE.MeshStandardMaterial({ color:'#f3e9d2', metalness:0.1, roughness:0.5 }));
+  top.position.y = 0.2; top.castShadow = top.receiveShadow = true;
+  stageGroup.add(top);
+  const trim = new THREE.Mesh(new THREE.TorusGeometry(r, 0.06, 12, 64),
+    new THREE.MeshStandardMaterial({ color:state.tone, metalness:0.9, roughness:0.2, emissive:state.tone, emissiveIntensity:0.15 }));
+  trim.rotation.x = Math.PI/2; trim.position.y = 0.42; stageGroup.add(trim);
+  scene.add(stageGroup);
+}
+
+function buildArch(){
+  clearGroup(archGroup);
+  archGroup = new THREE.Group();
+  const r = state.stage/2 + 0.4;
+  const arch = new THREE.Mesh(new THREE.TorusGeometry(r, 0.14, 16, 80, Math.PI),
+    new THREE.MeshStandardMaterial({ color:state.tone, metalness:0.85, roughness:0.25, emissive:state.tone, emissiveIntensity:0.2 }));
+  arch.position.set(0, 0.4, -r*0.5);
+  arch.castShadow = true;
+  archGroup.add(arch);
+  scene.add(archGroup);
+}
+
+function buildFlowers(){
+  clearGroup(flowerGroup);
+  flowerGroup = new THREE.Group();
+  const count = Math.round((state.flowers/100) * 56);
+  const r = state.stage/2 + 0.4;
+  const palette = [state.tone, '#ffffff', '#f2c0cf', '#cdeee0'];
+  for(let i=0;i<count;i++){
+    const t = Math.PI * (i/(count-1||1));
+    const f = new THREE.Mesh(new THREE.IcosahedronGeometry(0.15 + Math.random()*0.1, 0),
+      new THREE.MeshStandardMaterial({ color: palette[i%palette.length], roughness:0.6, metalness:0.05 }));
+    f.position.set(Math.cos(t)*r, 0.4 + Math.sin(t)*r, -r*0.5 + (Math.random()-0.5)*0.3);
+    f.castShadow = true;
+    flowerGroup.add(f);
+  }
+  scene.add(flowerGroup);
+}
+
+function buildSofa(){
+  const sofa = new THREE.Group();
+  const mat = new THREE.MeshStandardMaterial({ color:'#f3e5ab', roughness:0.5, metalness:0.1 });
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.5, 1), mat); seat.position.set(0,0.65,0); seat.castShadow=true;
+  const back = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.1, 0.3), mat); back.position.set(0,1.1,-0.45); back.castShadow=true;
+  sofa.add(seat, back);
+  sofa.position.set(0, 0.4, 0.2);
+  stageGroup.add(sofa);
+}
+
+function buildChairs(){
+  clearGroup(chairGroup);
+  chairGroup = new THREE.Group();
+  const n = state.chairs;
+  const baseR = state.stage/2 + 2.6;
+  let placed = 0, ring = 0;
+  while(placed < n && ring < 7){
+    const ringR = baseR + ring*1.3;
+    const cap = Math.floor(ringR * 2.2);
+    const inThis = Math.min(cap, n - placed);
+    for(let i=0;i<inThis;i++){
+      const a = -Math.PI*0.72 + (Math.PI*1.44) * (inThis>1 ? i/(inThis-1) : 0.5);
+      const chair = makeChair();
+      chair.position.set(Math.cos(a)*ringR, 0, Math.sin(a)*ringR + 1.2);
+      chair.lookAt(0, 0.5, 0);
+      chairGroup.add(chair);
+    }
+    placed += inThis; ring++;
+  }
+  scene.add(chairGroup);
+}
+
+function makeChair(){
+  const g = new THREE.Group();
+  const m = new THREE.MeshStandardMaterial({ color:state.tone, metalness:0.7, roughness:0.35 });
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(0.45,0.08,0.45), m); seat.position.y=0.5; seat.castShadow=true;
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.45,0.5,0.06), m); back.position.set(0,0.75,-0.2); back.castShadow=true;
+  g.add(seat, back);
+  return g;
+}
+
+function onResize(){
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+window.onStage = (v)=>{ state.stage=parseFloat(v); document.getElementById('stageVal').textContent=v+'m'; document.getElementById('statStage').textContent='Stage: '+v+'m'; buildStage(); buildArch(); buildFlowers(); buildSofa(); buildChairs(); };
+window.onChairs = (v)=>{ state.chairs=parseInt(v); document.getElementById('chairVal').textContent=v; document.getElementById('statChairs').textContent='Chairs: '+v; buildChairs(); };
+window.onFlowers = (v)=>{ state.flowers=parseInt(v); document.getElementById('flowerVal').textContent=v>70?'Full':v>30?'Medium':'Sparse'; buildFlowers(); };
+window.onLight = (v)=>{ state.light=parseInt(v); const f=v/65; keyLight.intensity=1.4*f; ambient.intensity=0.5*f; document.getElementById('lightVal').textContent=v>70?'Bright':v>40?'Warm':'Dim'; };
+window.onFloor = (v)=>{ state.floor=v; buildFloor(); };
+window.setTone = (el,c)=>{ state.tone=c; document.querySelectorAll('.tone-swatch').forEach(s=>s.classList.remove('active')); el.classList.add('active'); buildStage(); buildArch(); buildFlowers(); buildSofa(); buildChairs(); };
+window.resetView = ()=>{ camera.position.set(0,7,16); controls.target.set(0,2,0); };
+window.randomize = ()=>{
+  const tones=['#e6c364','#f2f0ea','#c4748a','#8b7ec8'];
+  const c=tones[Math.floor(Math.random()*tones.length)];
+  const sw=[...document.querySelectorAll('.tone-swatch')].find(s=>s.dataset.color===c);
+  setTone(sw||document.querySelector('.tone-swatch'), c);
+  const st=(5+Math.random()*9).toFixed(1); document.getElementById('stageSlider').value=st; onStage(st);
+  const ch=Math.round(10+Math.random()*40); document.getElementById('chairSlider').value=ch; onChairs(ch);
+};
+window.toggleMode = (mode)=>{
+  const c=document.getElementById('clientToggle'), a=document.getElementById('adminToggle');
+  if(mode==='client'){ c.classList.add('bg-primary','text-on-primary','shadow-sm'); c.classList.remove('text-on-surface-variant'); a.classList.remove('bg-primary','text-on-primary','shadow-sm'); a.classList.add('text-on-surface-variant'); }
+  else { a.classList.add('bg-primary','text-on-primary','shadow-sm'); a.classList.remove('text-on-surface-variant'); c.classList.remove('bg-primary','text-on-primary','shadow-sm'); c.classList.add('text-on-surface-variant'); }
+};
+</script>
+
+<script>
+(function(){
+  var CATEGORY_META = {
+    'featured':      {ar:'مختارات',        en:'FEATURED'},
+    'chairs':        {ar:'الكراسي',        en:'CHAIRS'},
+    'tables':        {ar:'الطاولات',       en:'TABLES'},
+    'sofas':         {ar:'الأرائك',        en:'SOFAS'},
+    'bridal-sofas':  {ar:'أرائك العروس',   en:'BRIDAL SOFAS'},
+    'coffee-tables': {ar:'طاولات القهوة',  en:'COFFEE TABLES'}
+  };
+  var CATEGORY_ORDER = ['featured','chairs','tables','sofas','bridal-sofas','coffee-tables'];
+  var FEATURED_PAGES = [4,8,10,17,18,22,42,54,61,64];
+  var WHATSAPP_NUMBER = '971502079810';
+  var FAV_KEY = 'hf_favorites_v1';
+
+  var catalogPages = null;
+  var activeTab = 'featured';
+
+  function waLink(text){ return 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(text); }
+
+  function getFavorites(){
+    try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch(e){ return []; }
+  }
+  function saveFavorites(list){
+    try { localStorage.setItem(FAV_KEY, JSON.stringify(list)); } catch(e){}
+    updateFavBadge();
+  }
+  function favId(item){ return (item.code || 'x') + '::' + item.page + '::' + item.name; }
+  function isFav(item){ return getFavorites().some(function(f){ return f.id === favId(item); }); }
+
+  function toggleFav(item, btnEl){
+    var id = favId(item);
+    var favs = getFavorites();
+    var idx = -1;
+    for(var i=0;i<favs.length;i++){ if(favs[i].id === id){ idx = i; break; } }
+    if(idx >= 0){ favs.splice(idx,1); } else { item.id = id; favs.push(item); }
+    saveFavorites(favs);
+    var nowActive = idx < 0;
+    if(btnEl){
+      btnEl.classList.toggle('active', nowActive);
+      var icon = btnEl.querySelector('.material-symbols-outlined');
+      icon.classList.toggle('filled', nowActive);
+    }
+  }
+
+  function updateFavBadge(){
+    var n = getFavorites().length;
+    var badge = document.getElementById('favBadge');
+    if(!badge) return;
+    if(n > 0){ badge.textContent = n; badge.classList.remove('hidden'); }
+    else { badge.classList.add('hidden'); }
+  }
+
+  function loadCatalogData(){
+    if(catalogPages) return Promise.resolve(catalogPages);
+    return fetch('catalog.html')
+      .then(function(res){ return res.text(); })
+      .then(function(text){
+        var m = text.match(/<script id="catalog-data" type="application\/json">([\s\S]*?)<\/script>/);
+        if(!m) throw new Error('catalog data block not found');
+        catalogPages = JSON.parse(m[1]);
+        return catalogPages;
+      });
+  }
+
+  function pagesForTab(tab, allPages){
+    if(tab === 'featured'){
+      var out = [];
+      for(var i=0;i<FEATURED_PAGES.length;i++){
+        for(var j=0;j<allPages.length;j++){
+          if(allPages[j].page === FEATURED_PAGES[i]){ out.push(allPages[j]); break; }
+        }
+      }
+      return out;
+    }
+    return allPages.filter(function(pg){ return pg.category === tab; });
+  }
+
+  function buildTabs(){
+    var tabsEl = document.getElementById('catalogTabs');
+    tabsEl.innerHTML = '';
+    CATEGORY_ORDER.forEach(function(key){
+      var meta = CATEGORY_META[key];
+      var btn = document.createElement('button');
+      btn.className = 'tab-pill shrink-0 px-4 py-1.5 rounded-full font-label-caps text-[10px] tracking-widest border border-outline-variant/20 text-on-surface-variant' + (key===activeTab ? ' active' : '');
+      btn.textContent = meta.ar + ' · ' + meta.en;
+      btn.onclick = function(k){ return function(){ activeTab = k; renderGrid(); buildTabs(); }; }(key);
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function renderGrid(){
+    var grid = document.getElementById('catalogGrid');
+    var empty = document.getElementById('catalogEmpty');
+    var q = (document.getElementById('catalogSearch').value || '').trim().toLowerCase();
+    var pages = pagesForTab(activeTab, catalogPages);
+    grid.innerHTML = '';
+    var shown = 0;
+    pages.forEach(function(page){
+      var items = page.items.filter(function(it){
+        return !q || (it.code+' '+it.name+' '+it.details).toLowerCase().indexOf(q) !== -1;
+      });
+      if(!items.length) return;
+      shown++;
+      var card = document.createElement('div');
+      card.className = 'rounded-xl overflow-hidden bg-surface-variant/10 border border-outline-variant/10';
+      var img = document.createElement('img');
+      img.src = page.image; img.loading = 'lazy'; img.alt = meta_label(page.category);
+      img.className = 'w-full aspect-[832/1181] object-cover object-top bg-surface-container-low';
+      card.appendChild(img);
+      var body = document.createElement('div');
+      body.className = 'p-3 space-y-2';
+      items.forEach(function(it){
+        var row = document.createElement('div');
+        row.className = 'flex items-center justify-between gap-2';
+        var label = document.createElement('div');
+        label.className = 'min-w-0';
+        label.innerHTML = '<p class="text-[12px] text-on-surface truncate">'+ (it.name||'') +'</p>' +
+          (it.code ? '<p class="font-label-caps text-[8px] text-on-surface-variant/50 tracking-widest">'+it.code+'</p>' : '');
+        var favItem = {code:it.code, name:it.name, details:it.details, category:page.category, page:page.page, image:page.image};
+        var btn = document.createElement('button');
+        btn.className = 'fav-btn shrink-0 w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-variant/30' + (isFav(favItem) ? ' active' : '');
+        btn.innerHTML = '<span class="material-symbols-outlined text-[18px]'+(isFav(favItem)?' filled':'')+'">favorite</span>';
+        btn.onclick = function(fi, b){ return function(){ toggleFav(fi, b); }; }(favItem, btn);
+        row.appendChild(label); row.appendChild(btn);
+        body.appendChild(row);
+      });
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+    grid.classList.toggle('hidden', shown===0);
+    empty.classList.toggle('hidden', shown!==0);
+  }
+
+  function meta_label(cat){ return CATEGORY_META[cat] ? CATEGORY_META[cat].en : cat; }
+
+  window.filterCatalog = renderGrid;
+
+  window.openCatalog = function(){
+    var panel = document.getElementById('catalogPanel');
+    panel.classList.remove('hidden'); panel.classList.add('flex');
+    document.getElementById('catalogLoading').classList.remove('hidden');
+    document.getElementById('catalogGrid').classList.add('hidden');
+    document.getElementById('catalogEmpty').classList.add('hidden');
+    loadCatalogData().then(function(){
+      buildTabs();
+      renderGrid();
+      document.getElementById('catalogLoading').classList.add('hidden');
+    }).catch(function(){
+      document.getElementById('catalogLoading').innerHTML =
+        '<p class="text-error text-sm text-center max-w-xs">تعذّر تحميل الكتالوج<br>Could not load catalog.html — make sure it is uploaded in the same folder as this page.</p>';
+    });
+  };
+  window.closeCatalog = function(){
+    var panel = document.getElementById('catalogPanel');
+    panel.classList.add('hidden'); panel.classList.remove('flex');
+  };
+
+  function renderFavList(){
+    var favs = getFavorites();
+    var list = document.getElementById('favList');
+    var empty = document.getElementById('favEmpty');
+    var footer = document.getElementById('favFooter');
+    list.innerHTML = '';
+    if(!favs.length){ empty.classList.remove('hidden'); footer.classList.add('hidden'); return; }
+    empty.classList.add('hidden'); footer.classList.remove('hidden');
+    favs.forEach(function(f){
+      var row = document.createElement('div');
+      row.className = 'flex items-center gap-3 bg-surface-variant/10 border border-outline-variant/10 rounded-xl p-2.5';
+      var img = document.createElement('img');
+      img.src = f.image; img.className = 'w-14 h-14 rounded-lg object-cover object-top bg-surface-container-low shrink-0';
+      var info = document.createElement('div');
+      info.className = 'min-w-0 flex-1';
+      info.innerHTML = '<p class="text-[13px] text-on-surface truncate">'+(f.name||'')+'</p>' +
+        (f.code ? '<p class="font-label-caps text-[8px] text-on-surface-variant/50 tracking-widest">'+f.code+'</p>' : '');
+      var rm = document.createElement('button');
+      rm.className = 'shrink-0 w-8 h-8 rounded-full hover:bg-surface-variant/30 flex items-center justify-center text-on-surface-variant';
+      rm.innerHTML = '<span class="material-symbols-outlined text-[18px]">close</span>';
+      rm.onclick = function(fid){ return function(){
+        saveFavorites(getFavorites().filter(function(x){ return x.id !== fid; }));
+        renderFavList();
+      }; }(f.id);
+      row.appendChild(img); row.appendChild(info); row.appendChild(rm);
+      list.appendChild(row);
+    });
+  }
+
+  window.clearFavorites = function(){ saveFavorites([]); renderFavList(); };
+
+  window.sendFavoritesWhatsApp = function(){
+    var favs = getFavorites();
+    var lines = favs.map(function(f){ return (f.code ? f.code+' — ' : '') + f.name; }).join('\n');
+    var msg = 'مرحباً، أرغب في الاستفسار عن هذه القطع من الكتالوج:\n' + lines;
+    window.open(waLink(msg), '_blank');
+  };
+
+  window.openFavorites = function(){
+    renderFavList();
+    var panel = document.getElementById('favoritesPanel');
+    panel.classList.remove('hidden'); panel.classList.add('flex');
+  };
+  window.closeFavorites = function(){
+    var panel = document.getElementById('favoritesPanel');
+    panel.classList.add('hidden'); panel.classList.remove('flex');
+  };
+
+  updateFavBadge();
+})();
+</script>
+</body></html>
