@@ -20,9 +20,12 @@
   input[type=range]::-webkit-slider-runnable-track { height:2px; background:#4d4637; border-radius:1px; }
   input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; height:14px; width:14px; border-radius:50%; background:#e4e1e9; border:1px solid #e6c364; margin-top:-6px; cursor:pointer; box-shadow:0 0 10px rgba(230,195,100,.3); }
   .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24; }
+  .material-symbols-outlined.filled { font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24; }
   .custom-scrollbar::-webkit-scrollbar { width:4px; }
   .custom-scrollbar::-webkit-scrollbar-thumb { background:#4d4637; border-radius:10px; }
   .tone-swatch.active { outline:2px solid #e6c364; outline-offset:2px; }
+  .tab-pill.active { background:#e6c364; color:#3d2e00; border-color:#e6c364; }
+  .fav-btn.active .material-symbols-outlined { color:#e6c364; }
   #webgl { display:block; width:100%; height:100%; }
   .loading-pulse { animation:pulse 1.4s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{opacity:.4} 50%{opacity:1} }
@@ -52,11 +55,15 @@
     <span class="text-display-lg-mobile font-bold tracking-tight text-primary">حكاية فرح ديزاين</span>
     <div class="hidden md:flex gap-6 mr-6">
       <button class="font-label-caps text-label-caps text-primary border-b border-primary pb-0.5 tracking-widest">PLANNER</button>
-      <button class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors tracking-widest">CATALOG</button>
+      <button class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors tracking-widest" onclick="openCatalog()">CATALOG</button>
       <button class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-colors tracking-widest">ARCHITECT AI</button>
     </div>
   </div>
   <div class="flex items-center gap-4">
+    <button onclick="openFavorites()" class="relative w-9 h-9 rounded-full hover:bg-surface-variant/30 flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" aria-label="My Selections">
+      <span class="material-symbols-outlined text-[20px]">favorite</span>
+      <span id="favBadge" class="hidden absolute -top-0.5 -left-0.5 min-w-[16px] h-[16px] px-1 rounded-full bg-primary text-on-primary text-[9px] font-bold flex items-center justify-center leading-none">0</span>
+    </button>
     <div class="flex p-0.5 bg-surface-container rounded-full border border-outline-variant/20">
       <button class="px-4 py-1 rounded-full font-label-caps text-[10px] transition-all text-on-surface-variant" id="clientToggle" onclick="toggleMode('client')">CLIENT</button>
       <button class="px-4 py-1 rounded-full font-label-caps text-[10px] bg-primary text-on-primary shadow-sm transition-all" id="adminToggle" onclick="toggleMode('admin')">ARCHITECT</button>
@@ -131,6 +138,63 @@
     <span class="font-label-caps text-[9px] text-primary">● Live</span>
   </div>
 </footer>
+
+<!-- CATALOG PANEL -->
+<div id="catalogPanel" class="fixed inset-0 z-[70] bg-surface/97 backdrop-blur-2xl hidden flex-col">
+  <div class="flex items-center justify-between px-margin-edge h-touch-target-min border-b border-outline-variant/20 shrink-0">
+    <div>
+      <h2 class="font-headline-md text-primary tracking-wide">الكتالوج</h2>
+      <p class="font-label-caps text-[9px] text-on-surface-variant/60 tracking-[0.2em] uppercase">Product Catalog</p>
+    </div>
+    <button onclick="closeCatalog()" class="w-10 h-10 rounded-full hover:bg-surface-variant/30 flex items-center justify-center text-on-surface-variant" aria-label="Close">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+  <div class="px-margin-edge py-3 border-b border-outline-variant/10 shrink-0">
+    <div class="relative mb-3">
+      <input id="catalogSearch" type="text" placeholder="بحث… جرّب «ذهبي» أو CHA-005" oninput="filterCatalog()"
+        class="w-full bg-surface-variant/30 border border-outline-variant/20 rounded-full py-2 pr-4 pl-10 text-sm text-on-surface outline-none focus:border-primary/50 transition-colors"/>
+      <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 text-[18px]">search</span>
+    </div>
+    <div id="catalogTabs" class="flex gap-2 overflow-x-auto custom-scrollbar pb-1"></div>
+  </div>
+  <div id="catalogBody" class="flex-1 overflow-y-auto custom-scrollbar px-margin-edge py-5">
+    <div id="catalogLoading" class="flex flex-col items-center justify-center text-primary py-20">
+      <span class="material-symbols-outlined text-4xl loading-pulse">deployed_code</span>
+      <p class="font-label-caps text-[10px] tracking-widest mt-3 loading-pulse">جاري تحميل الكتالوج…</p>
+    </div>
+    <div id="catalogGrid" class="grid grid-cols-2 md:grid-cols-4 gap-4 hidden"></div>
+    <p id="catalogEmpty" class="hidden text-center text-on-surface-variant/50 text-sm py-16">لا توجد نتائج · No pieces match your search</p>
+  </div>
+</div>
+
+<!-- FAVORITES PANEL -->
+<div id="favoritesPanel" class="fixed inset-0 z-[70] bg-surface/97 backdrop-blur-2xl hidden flex-col">
+  <div class="flex items-center justify-between px-margin-edge h-touch-target-min border-b border-outline-variant/20 shrink-0">
+    <div>
+      <h2 class="font-headline-md text-primary tracking-wide">اختياراتي</h2>
+      <p class="font-label-caps text-[9px] text-on-surface-variant/60 tracking-[0.2em] uppercase">My Selections</p>
+    </div>
+    <button onclick="closeFavorites()" class="w-10 h-10 rounded-full hover:bg-surface-variant/30 flex items-center justify-center text-on-surface-variant" aria-label="Close">
+      <span class="material-symbols-outlined">close</span>
+    </button>
+  </div>
+  <div id="favBody" class="flex-1 overflow-y-auto custom-scrollbar px-margin-edge py-5">
+    <div id="favEmpty" class="text-center text-on-surface-variant/50 text-sm py-20">
+      <span class="material-symbols-outlined text-4xl block mb-3 opacity-40">favorite</span>
+      لم تحفظ أي قطعة بعد · Tap the heart on any piece to save it here
+    </div>
+    <div id="favList" class="space-y-3"></div>
+  </div>
+  <div id="favFooter" class="hidden px-margin-edge py-4 border-t border-outline-variant/10 shrink-0 space-y-2">
+    <button onclick="sendFavoritesWhatsApp()" class="w-full py-3.5 rounded-lg bg-primary text-on-primary font-bold text-[12px] tracking-widest hover:brightness-110 active:scale-[0.98] transition-all uppercase flex items-center justify-center gap-2">
+      <span class="material-symbols-outlined text-[18px]">chat</span>
+      إرسال عبر واتساب · Send on WhatsApp
+    </button>
+    <button onclick="clearFavorites()" class="w-full py-2 text-on-surface-variant/50 font-label-caps text-[9px] tracking-widest hover:text-error transition-all uppercase">مسح الكل · Clear all</button>
+  </div>
+</div>
+
 
 <script type="module">
 import * as THREE from 'three';
@@ -319,5 +383,215 @@ window.toggleMode = (mode)=>{
   if(mode==='client'){ c.classList.add('bg-primary','text-on-primary','shadow-sm'); c.classList.remove('text-on-surface-variant'); a.classList.remove('bg-primary','text-on-primary','shadow-sm'); a.classList.add('text-on-surface-variant'); }
   else { a.classList.add('bg-primary','text-on-primary','shadow-sm'); a.classList.remove('text-on-surface-variant'); c.classList.remove('bg-primary','text-on-primary','shadow-sm'); c.classList.add('text-on-surface-variant'); }
 };
+</script>
+
+<script>
+(function(){
+  var CATEGORY_META = {
+    'featured':      {ar:'مختارات',        en:'FEATURED'},
+    'chairs':        {ar:'الكراسي',        en:'CHAIRS'},
+    'tables':        {ar:'الطاولات',       en:'TABLES'},
+    'sofas':         {ar:'الأرائك',        en:'SOFAS'},
+    'bridal-sofas':  {ar:'أرائك العروس',   en:'BRIDAL SOFAS'},
+    'coffee-tables': {ar:'طاولات القهوة',  en:'COFFEE TABLES'}
+  };
+  var CATEGORY_ORDER = ['featured','chairs','tables','sofas','bridal-sofas','coffee-tables'];
+  var FEATURED_PAGES = [4,8,10,17,18,22,42,54,61,64];
+  var WHATSAPP_NUMBER = '971502079810';
+  var FAV_KEY = 'hf_favorites_v1';
+
+  var catalogPages = null;
+  var activeTab = 'featured';
+
+  function waLink(text){ return 'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + encodeURIComponent(text); }
+
+  function getFavorites(){
+    try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch(e){ return []; }
+  }
+  function saveFavorites(list){
+    try { localStorage.setItem(FAV_KEY, JSON.stringify(list)); } catch(e){}
+    updateFavBadge();
+  }
+  function favId(item){ return (item.code || 'x') + '::' + item.page + '::' + item.name; }
+  function isFav(item){ return getFavorites().some(function(f){ return f.id === favId(item); }); }
+
+  function toggleFav(item, btnEl){
+    var id = favId(item);
+    var favs = getFavorites();
+    var idx = -1;
+    for(var i=0;i<favs.length;i++){ if(favs[i].id === id){ idx = i; break; } }
+    if(idx >= 0){ favs.splice(idx,1); } else { item.id = id; favs.push(item); }
+    saveFavorites(favs);
+    var nowActive = idx < 0;
+    if(btnEl){
+      btnEl.classList.toggle('active', nowActive);
+      var icon = btnEl.querySelector('.material-symbols-outlined');
+      icon.classList.toggle('filled', nowActive);
+    }
+  }
+
+  function updateFavBadge(){
+    var n = getFavorites().length;
+    var badge = document.getElementById('favBadge');
+    if(!badge) return;
+    if(n > 0){ badge.textContent = n; badge.classList.remove('hidden'); }
+    else { badge.classList.add('hidden'); }
+  }
+
+  function loadCatalogData(){
+    if(catalogPages) return Promise.resolve(catalogPages);
+    return fetch('catalog.html')
+      .then(function(res){ return res.text(); })
+      .then(function(text){
+        var m = text.match(/<script id="catalog-data" type="application\/json">([\s\S]*?)<\/script>/);
+        if(!m) throw new Error('catalog data block not found');
+        catalogPages = JSON.parse(m[1]);
+        return catalogPages;
+      });
+  }
+
+  function pagesForTab(tab, allPages){
+    if(tab === 'featured'){
+      var out = [];
+      for(var i=0;i<FEATURED_PAGES.length;i++){
+        for(var j=0;j<allPages.length;j++){
+          if(allPages[j].page === FEATURED_PAGES[i]){ out.push(allPages[j]); break; }
+        }
+      }
+      return out;
+    }
+    return allPages.filter(function(pg){ return pg.category === tab; });
+  }
+
+  function buildTabs(){
+    var tabsEl = document.getElementById('catalogTabs');
+    tabsEl.innerHTML = '';
+    CATEGORY_ORDER.forEach(function(key){
+      var meta = CATEGORY_META[key];
+      var btn = document.createElement('button');
+      btn.className = 'tab-pill shrink-0 px-4 py-1.5 rounded-full font-label-caps text-[10px] tracking-widest border border-outline-variant/20 text-on-surface-variant' + (key===activeTab ? ' active' : '');
+      btn.textContent = meta.ar + ' · ' + meta.en;
+      btn.onclick = function(k){ return function(){ activeTab = k; renderGrid(); buildTabs(); }; }(key);
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  function renderGrid(){
+    var grid = document.getElementById('catalogGrid');
+    var empty = document.getElementById('catalogEmpty');
+    var q = (document.getElementById('catalogSearch').value || '').trim().toLowerCase();
+    var pages = pagesForTab(activeTab, catalogPages);
+    grid.innerHTML = '';
+    var shown = 0;
+    pages.forEach(function(page){
+      var items = page.items.filter(function(it){
+        return !q || (it.code+' '+it.name+' '+it.details).toLowerCase().indexOf(q) !== -1;
+      });
+      if(!items.length) return;
+      shown++;
+      var card = document.createElement('div');
+      card.className = 'rounded-xl overflow-hidden bg-surface-variant/10 border border-outline-variant/10';
+      var img = document.createElement('img');
+      img.src = page.image; img.loading = 'lazy'; img.alt = meta_label(page.category);
+      img.className = 'w-full aspect-[832/1181] object-cover object-top bg-surface-container-low';
+      card.appendChild(img);
+      var body = document.createElement('div');
+      body.className = 'p-3 space-y-2';
+      items.forEach(function(it){
+        var row = document.createElement('div');
+        row.className = 'flex items-center justify-between gap-2';
+        var label = document.createElement('div');
+        label.className = 'min-w-0';
+        label.innerHTML = '<p class="text-[12px] text-on-surface truncate">'+ (it.name||'') +'</p>' +
+          (it.code ? '<p class="font-label-caps text-[8px] text-on-surface-variant/50 tracking-widest">'+it.code+'</p>' : '');
+        var favItem = {code:it.code, name:it.name, details:it.details, category:page.category, page:page.page, image:page.image};
+        var btn = document.createElement('button');
+        btn.className = 'fav-btn shrink-0 w-8 h-8 rounded-full flex items-center justify-center hover:bg-surface-variant/30' + (isFav(favItem) ? ' active' : '');
+        btn.innerHTML = '<span class="material-symbols-outlined text-[18px]'+(isFav(favItem)?' filled':'')+'">favorite</span>';
+        btn.onclick = function(fi, b){ return function(){ toggleFav(fi, b); }; }(favItem, btn);
+        row.appendChild(label); row.appendChild(btn);
+        body.appendChild(row);
+      });
+      card.appendChild(body);
+      grid.appendChild(card);
+    });
+    grid.classList.toggle('hidden', shown===0);
+    empty.classList.toggle('hidden', shown!==0);
+  }
+
+  function meta_label(cat){ return CATEGORY_META[cat] ? CATEGORY_META[cat].en : cat; }
+
+  window.filterCatalog = renderGrid;
+
+  window.openCatalog = function(){
+    var panel = document.getElementById('catalogPanel');
+    panel.classList.remove('hidden'); panel.classList.add('flex');
+    document.getElementById('catalogLoading').classList.remove('hidden');
+    document.getElementById('catalogGrid').classList.add('hidden');
+    document.getElementById('catalogEmpty').classList.add('hidden');
+    loadCatalogData().then(function(){
+      buildTabs();
+      renderGrid();
+      document.getElementById('catalogLoading').classList.add('hidden');
+    }).catch(function(){
+      document.getElementById('catalogLoading').innerHTML =
+        '<p class="text-error text-sm text-center max-w-xs">تعذّر تحميل الكتالوج<br>Could not load catalog.html — make sure it is uploaded in the same folder as this page.</p>';
+    });
+  };
+  window.closeCatalog = function(){
+    var panel = document.getElementById('catalogPanel');
+    panel.classList.add('hidden'); panel.classList.remove('flex');
+  };
+
+  function renderFavList(){
+    var favs = getFavorites();
+    var list = document.getElementById('favList');
+    var empty = document.getElementById('favEmpty');
+    var footer = document.getElementById('favFooter');
+    list.innerHTML = '';
+    if(!favs.length){ empty.classList.remove('hidden'); footer.classList.add('hidden'); return; }
+    empty.classList.add('hidden'); footer.classList.remove('hidden');
+    favs.forEach(function(f){
+      var row = document.createElement('div');
+      row.className = 'flex items-center gap-3 bg-surface-variant/10 border border-outline-variant/10 rounded-xl p-2.5';
+      var img = document.createElement('img');
+      img.src = f.image; img.className = 'w-14 h-14 rounded-lg object-cover object-top bg-surface-container-low shrink-0';
+      var info = document.createElement('div');
+      info.className = 'min-w-0 flex-1';
+      info.innerHTML = '<p class="text-[13px] text-on-surface truncate">'+(f.name||'')+'</p>' +
+        (f.code ? '<p class="font-label-caps text-[8px] text-on-surface-variant/50 tracking-widest">'+f.code+'</p>' : '');
+      var rm = document.createElement('button');
+      rm.className = 'shrink-0 w-8 h-8 rounded-full hover:bg-surface-variant/30 flex items-center justify-center text-on-surface-variant';
+      rm.innerHTML = '<span class="material-symbols-outlined text-[18px]">close</span>';
+      rm.onclick = function(fid){ return function(){
+        saveFavorites(getFavorites().filter(function(x){ return x.id !== fid; }));
+        renderFavList();
+      }; }(f.id);
+      row.appendChild(img); row.appendChild(info); row.appendChild(rm);
+      list.appendChild(row);
+    });
+  }
+
+  window.clearFavorites = function(){ saveFavorites([]); renderFavList(); };
+
+  window.sendFavoritesWhatsApp = function(){
+    var favs = getFavorites();
+    var lines = favs.map(function(f){ return (f.code ? f.code+' — ' : '') + f.name; }).join('\n');
+    var msg = 'مرحباً، أرغب في الاستفسار عن هذه القطع من الكتالوج:\n' + lines;
+    window.open(waLink(msg), '_blank');
+  };
+
+  window.openFavorites = function(){
+    renderFavList();
+    var panel = document.getElementById('favoritesPanel');
+    panel.classList.remove('hidden'); panel.classList.add('flex');
+  };
+  window.closeFavorites = function(){
+    var panel = document.getElementById('favoritesPanel');
+    panel.classList.add('hidden'); panel.classList.remove('flex');
+  };
+
+  updateFavBadge();
+})();
 </script>
 </body></html>
